@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Product Opportunity Finder</title>
+<script src="opportunities.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f7; color: #1d1d1f; }
+.header { background: #1d1d1f; color: #fff; padding: 28px 36px; }
+.header h1 { font-size: 26px; font-weight: 700; }
+.header h1 span { color: #ff9f0a; }
+.header .sub { color: #aeaeb2; font-size: 13px; margin-top: 5px; }
+.summary-bar { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; background: #d2d2d7; border-bottom: 1px solid #d2d2d7; }
+.stat { background: #fff; padding: 18px 24px; }
+.stat .label { font-size: 10px; color: #6e6e73; text-transform: uppercase; letter-spacing: .05em; }
+.stat .value { font-size: 24px; font-weight: 600; margin-top: 4px; }
+.stat .hint { font-size: 11px; color: #6e6e73; margin-top: 2px; }
+.section { padding: 28px 36px; }
+.sec-title { font-size: 17px; font-weight: 600; margin-bottom: 18px; }
+.opp { background: #fff; border-radius: 14px; border: 1px solid #e5e5ea; box-shadow: 0 1px 3px rgba(0,0,0,.07); padding: 20px 22px; margin-bottom: 16px; }
+.opp-head { display: flex; align-items: center; gap: 14px; }
+.rank { font-size: 13px; color: #6e6e73; font-weight: 600; }
+.opp-name { font-size: 18px; font-weight: 700; flex: 1; }
+.score { font-size: 22px; font-weight: 800; padding: 4px 14px; border-radius: 10px; color: #fff; white-space: nowrap; }
+.s-strong { background: #1a7f37; } .s-watch { background: #9a6700; } .s-pass { background: #636366; }
+.label-chip { font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 10px; color: #fff; }
+.opp-why { font-size: 13px; color: #3a3a3c; line-height: 1.5; margin: 12px 0; }
+.metrics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px,1fr)); gap: 10px; margin: 12px 0; }
+.metric { background: #f8f8fa; border-radius: 8px; padding: 8px 10px; }
+.metric .m-label { font-size: 10px; color: #6e6e73; text-transform: uppercase; letter-spacing: .04em; }
+.metric .m-val { font-size: 15px; font-weight: 600; margin-top: 2px; }
+.ex-list { margin: 10px 0; }
+.ex { font-size: 12px; padding: 6px 0; border-top: 1px solid #f0f0f2; display: flex; justify-content: space-between; gap: 10px; }
+.ex a { color: #0071e3; text-decoration: none; }
+.tag { font-size: 11px; padding: 2px 8px; border-radius: 6px; background: #f5f5f7; color: #3a3a3c; }
+.tag-bb { background: #e8f4fd; color: #004d8c; } .tag-bsr { background: #f3f0ff; color: #5a2d8a; }
+.nextsteps { background: #fff8e6; border: 1px solid #ffe066; border-radius: 10px; padding: 12px 14px; font-size: 13px; line-height: 1.6; color: #7d5c00; margin-top: 12px; }
+.nextsteps code { background: #fff; padding: 1px 6px; border-radius: 5px; border: 1px solid #ffe066; }
+.ru-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #e5e5ea; }
+.ru-table th, .ru-table td { text-align: left; padding: 10px 14px; font-size: 13px; border-bottom: 1px solid #f0f0f2; }
+.ru-table th { background: #fafafa; color: #6e6e73; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+.ru-table tr:last-child td { border-bottom: none; }
+.footer { padding: 22px 36px; border-top: 1px solid #e5e5ea; background: #fff; font-size: 11px; color: #6e6e73; line-height: 1.7; }
+.empty { background:#fff; border:1px solid #e5e5ea; border-radius:14px; padding:18px; color:#6e6e73; font-size:13px; }
+@media (max-width: 820px) { .summary-bar { grid-template-columns: 1fr 1fr; } .header,.section,.footer { padding-left:18px; padding-right:18px; } }
+</style>
+</head>
+<body>
+<div id="app"><p style="padding:40px;color:#6e6e73;font-size:14px;">Loading opportunities.js… keep report.html and opportunities.js in the same folder.</p></div>
+<script>
+(function(){
+  const D = window.__DISCOVERY_DATA__;
+  if (!D) return;
+  const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  const num = v => (v == null || v === '') ? null : (Number.isFinite(Number(v)) ? Number(v) : null);
+  const fmtInt = v => num(v)==null ? 'N/A' : Math.round(Number(v)).toLocaleString();
+  const fmtUsd = v => num(v)==null ? 'N/A' : '$'+Math.round(Number(v)).toLocaleString();
+  const shortlist = Array.isArray(D.shortlist) ? D.shortlist : [];
+  const runnersUp = Array.isArray(D.runnersUp) ? D.runnersUp : [];
+  const totals = D.totals || {};
+  const crit = D.criteria || {};
+  const scoreClass = s => (num(s)||0) >= 70 ? 's-strong' : (num(s)||0) >= 45 ? 's-watch' : 's-pass';
+
+  function metric(label, val){ return `<div class="metric"><div class="m-label">${esc(label)}</div><div class="m-val">${val}</div></div>`; }
+  function oppCard(o, i){
+    const m = o.metrics || {};
+    const sc = scoreClass(o.score);
+    const ex = (Array.isArray(o.exampleProducts)?o.exampleProducts:[]).slice(0,3).map(p => `
+      <div class="ex">
+        <span><a href="https://www.amazon.com/dp/${esc(p.asin)}" target="_blank">${esc((p.title||p.asin||'').slice(0,70))}</a>
+        <span class="tag ${p.source==='blackbox'?'tag-bb':'tag-bsr'}">${esc(p.source||'')}</span></span>
+        <span>${fmtUsd(p.price)} · ${fmtInt(p.reviewCount)} rev · ${num(p.rating)!=null?Number(p.rating).toFixed(1)+'★':'—'}</span>
+      </div>`).join('');
+    const ns = o.nextSteps || {};
+    return `
+      <div class="opp">
+        <div class="opp-head">
+          <span class="rank">#${i+1}</span>
+          <span class="opp-name">${esc(o.niche || 'Untitled niche')}</span>
+          <span class="label-chip ${sc}">${esc(o.label || '')}</span>
+          <span class="score ${sc}">${fmtInt(o.score)}</span>
+        </div>
+        <div class="opp-why">${esc(o.why || '')}</div>
+        <div class="metrics-grid">
+          ${metric('Price', m.priceLow!=null?fmtUsd(m.priceLow)+'–'+fmtUsd(m.priceHigh):'N/A')}
+          ${metric('Med Revenue/mo', fmtUsd(m.medRevenue30d))}
+          ${metric('Med Reviews', fmtInt(m.medReviews))}
+          ${metric('Med Rating', num(m.medRating)!=null?Number(m.medRating).toFixed(1)+'★':'N/A')}
+          ${metric('Search Vol/mo', fmtInt(m.searchVolume))}
+          ${metric('Avg Weight', num(m.avgWeightLb)!=null?m.avgWeightLb+' lb':'N/A')}
+        </div>
+        <div class="ex-list">${ex || '<div class="ex">No example products.</div>'}</div>
+        <div class="nextsteps"><strong>Next steps:</strong>
+          &rarr; run the <b>cost skill</b> on ASIN <code>${esc(ns.costSkillAsin || 'N/A')}</code>
+          &nbsp;&middot;&nbsp; &rarr; run the <b>review skill</b> on <code>${esc(ns.reviewSkillKeyword || o.niche || 'N/A')}</code>
+        </div>
+      </div>`;
+  }
+
+  let html = `
+    <div class="header">
+      <h1>Opportunity Finder: <span>${esc(D.category || 'Category')}</span></h1>
+      <div class="sub">Generated ${esc(D.date || '')} · ${fmtInt(totals.candidatesFound)} candidates across ${fmtInt(totals.nichesEvaluated)} niches</div>
+    </div>
+    <div class="summary-bar">
+      <div class="stat"><div class="label">Candidates Found</div><div class="value">${fmtInt(totals.candidatesFound)}</div></div>
+      <div class="stat"><div class="label">Niches Evaluated</div><div class="value">${fmtInt(totals.nichesEvaluated)}</div></div>
+      <div class="stat"><div class="label">Data Source</div><div class="value" style="font-size:16px">${totals.blackBox ? 'Black Box + BSR' : 'Best Sellers only'}</div></div>
+      <div class="stat"><div class="label">H10 Lookups</div><div class="value">${num(D.h10LookupsUsed)!=null?fmtInt(D.h10LookupsUsed):0}/3</div></div>
+    </div>
+    <div class="section">
+      <div class="sec-title">Top ${shortlist.length} Opportunities</div>
+      ${shortlist.length ? shortlist.map(oppCard).join('') : '<div class="empty">No opportunities found.</div>'}
+    </div>
+    ${runnersUp.length ? `
+    <div class="section">
+      <div class="sec-title">Runners-up</div>
+      <table class="ru-table">
+        <tr><th>#</th><th>Niche</th><th>Score</th><th>Label</th></tr>
+        ${runnersUp.map((r,i) => `<tr><td>${i+4}</td><td>${esc(r.niche||'')}</td><td>${fmtInt(r.score)}</td><td>${esc(r.label||'')}</td></tr>`).join('')}
+      </table>
+    </div>` : ''}
+    <div class="footer">
+      <strong>Criteria:</strong> price ≥ ${fmtUsd(crit.minPrice)} · revenue ≥ ${fmtUsd(crit.minRevenue)}/mo · reviews ≤ ${fmtInt(crit.maxReviews)} · weight ≤ ${crit.maxWeightLb ?? 'N/A'} lb · rating-gap at ≤ ${crit.minRatingGapAt ?? 'N/A'}★<br>
+      <strong>Data sources:</strong> ${totals.blackBox ? 'Helium 10 Black Box + Amazon Best Sellers' : 'Amazon Best Sellers only (Black Box unavailable)'} · H10 lookups used: ${num(D.h10LookupsUsed)!=null?fmtInt(D.h10LookupsUsed):0}/3.<br>
+      <strong>Grounding:</strong> All products and metrics are from real Black Box / Amazon data. Niches with no data for a metric show N/A. This is a Phase-1 shortlist — confirm each with the cost + review skills before sourcing.
+    </div>`;
+  document.getElementById('app').innerHTML = html;
+})();
+</script>
+</body>
+</html>
