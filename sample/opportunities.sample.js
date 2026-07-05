@@ -2,7 +2,7 @@ window.__DISCOVERY_DATA__ = {
   category: "Home & Kitchen",
   date: "2026-07-02",
   criteria: { minPrice: 20, minRevenue: 5000, maxReviews: 500, maxWeightLb: 2, minRatingGapAt: 4.3 },
-  totals: { candidatesFound: 140, nichesEvaluated: 7, blackBox: true },
+  totals: { candidatesFound: 200, nichesEvaluated: 8, blackBox: true, blackBoxSource: "cache", blackBoxCapturedAt: "2026-06-20T09:00:00Z" },
   shortlist: [
     {
       niche: "Silicone stretch lids",
@@ -41,5 +41,5 @@ window.__DISCOVERY_DATA__ = {
     { niche: "Under-shelf basket", score: 47, label: "Worth-testing" },
     { niche: "Silicone trivet mat", score: 39, label: "Pass" }
   ],
-  h10LookupsUsed: 2
+  h10LookupsUsed: 1
 };

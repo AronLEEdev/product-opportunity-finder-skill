@@ -61,6 +61,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   const runnersUp = Array.isArray(D.runnersUp) ? D.runnersUp : [];
   const totals = D.totals || {};
   const crit = D.criteria || {};
+  const bbSource = totals.blackBoxSource || (totals.blackBox ? 'fresh' : null); // "fresh" | "cache" | null
+  const bbDate = totals.blackBoxCapturedAt ? String(totals.blackBoxCapturedAt).slice(0,10) : null;
+  const bbLabel = bbSource === 'cache' ? 'Black Box (cached)' : bbSource === 'fresh' ? 'Black Box (fresh)' : null;
   const scoreClass = s => (num(s)||0) >= 70 ? 's-strong' : (num(s)||0) >= 45 ? 's-watch' : 's-pass';
 
   function metric(label, val){ return `<div class="metric"><div class="m-label">${esc(label)}</div><div class="m-val">${val}</div></div>`; }
@@ -89,6 +92,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
           ${metric('Med Reviews', fmtInt(m.medReviews))}
           ${metric('Med Rating', num(m.medRating)!=null?Number(m.medRating).toFixed(1)+'★':'N/A')}
           ${metric('Search Vol/mo', fmtInt(m.searchVolume))}
+          ${metric('Cerebro IQ', fmtInt(m.iqScore))}
+          ${metric('CPR (units)', fmtInt(m.cpr))}
           ${metric('Avg Weight', num(m.avgWeightLb)!=null?m.avgWeightLb+' lb':'N/A')}
         </div>
         <div class="ex-list">${ex || '<div class="ex">No example products.</div>'}</div>
@@ -107,7 +112,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     <div class="summary-bar">
       <div class="stat"><div class="label">Candidates Found</div><div class="value">${fmtInt(totals.candidatesFound)}</div></div>
       <div class="stat"><div class="label">Niches Evaluated</div><div class="value">${fmtInt(totals.nichesEvaluated)}</div></div>
-      <div class="stat"><div class="label">Data Source</div><div class="value" style="font-size:16px">${totals.blackBox ? 'Black Box + BSR' : 'Best Sellers only'}</div></div>
+      <div class="stat"><div class="label">Data Source</div><div class="value" style="font-size:16px">${bbLabel ? bbLabel + ' + BSR' : 'Best Sellers only'}</div>${bbSource==='cache'&&bbDate?`<div class="hint">cached ${esc(bbDate)} · 0 lookups</div>`:''}</div>
       <div class="stat"><div class="label">H10 Lookups</div><div class="value">${num(D.h10LookupsUsed)!=null?fmtInt(D.h10LookupsUsed):0}/3</div></div>
     </div>
     <div class="section">
@@ -124,7 +129,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     </div>` : ''}
     <div class="footer">
       <strong>Criteria:</strong> price ≥ ${fmtUsd(crit.minPrice)} · revenue ≥ ${fmtUsd(crit.minRevenue)}/mo · reviews ≤ ${fmtInt(crit.maxReviews)} · weight ≤ ${crit.maxWeightLb ?? 'N/A'} lb · rating-gap at ≤ ${crit.minRatingGapAt ?? 'N/A'}★<br>
-      <strong>Data sources:</strong> ${totals.blackBox ? 'Helium 10 Black Box + Amazon Best Sellers' : 'Amazon Best Sellers only (Black Box unavailable)'} · H10 lookups used: ${num(D.h10LookupsUsed)!=null?fmtInt(D.h10LookupsUsed):0}/3.<br>
+      <strong>Data sources:</strong> ${bbLabel ? bbLabel + (bbSource==='cache'&&bbDate?' ('+esc(bbDate)+')':'') + ' + Amazon Best Sellers' : 'Amazon Best Sellers only (Black Box unavailable)'} · H10 lookups used: ${num(D.h10LookupsUsed)!=null?fmtInt(D.h10LookupsUsed):0}/3.<br>
       <strong>Grounding:</strong> All products and metrics are from real Black Box / Amazon data. Niches with no data for a metric show N/A. This is a Phase-1 shortlist — confirm each with the cost + review skills before sourcing.
     </div>`;
   document.getElementById('app').innerHTML = html;
